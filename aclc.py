@@ -363,15 +363,3 @@ def main():
 
 if __name__=='__main__':
     main()
-
-
-# root@andromeda:/volume1/andrea-und-ralf# sh /root/synology-pisces-andrea-und-ralf.sh  > /volume1/synology-andromeda-andrea-und-ralf.sh.txt
-# /root/synology-pisces-andrea-und-ralf.sh: line 2654823: ACL: command not found
-# synoacltool -del './!Fotos/Fotobuch/19-12-Fotobuch-Ralf/2019-A&R.mcf~'
-# synoacltool -set-archive './!Fotos/Fotobuch/19-12-Fotobuch-Ralf/2019-A&R.mcf~' 'is_inherit,has_ACL,is_support_ACL'
-# synoacltool -set-owner './!Fotos/Fotobuch/19-12-Fotobuch-Ralf/2019-A&R.mcf~' user 'andrea'
-# echo './!Fotos/Fotobuch/19-12-Fotobuch-Ralf/2019-A&R.mcf~'
-# synoacltool -del './!Fotos/Fotobuch/19-12-Fotobuch-Ralf/2019-A&R.mcf~'
-# synoacltool -set-archive './!Fotos/Fotobuch/19-12-Fotobuch-Ralf/2019-A&R.mcf~' 'is_inherit,has_ACL,is_support_ACL'
-# synoacltool -set-owner './!Fotos/Fotobuch/19-12-Fotobuch-Ralf/2019-A&R.mcf~' user 'andrea'
-# ACL Levels differ by more than one!!!!
