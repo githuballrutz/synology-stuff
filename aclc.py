@@ -15,6 +15,9 @@ args = Args()
 import codecs
 import logging
 
+from datetime import datetime
+now = datetime.now()
+timestamp = now.strftime("%Y%m%d%H%M%S")
 
 FALSE = 0
 TRUE = 1
@@ -26,6 +29,10 @@ statistics = {
 	"errors" : 0,
 	"linecount": 0
 }
+
+
+find_command = ( 'find . -exec echo {} \\; -exec synoacltool -get {} \\; > %s-aclfile.txt' % (timestamp))
+
 
 class qacl:
 
@@ -102,12 +109,15 @@ class qacl:
 
 		if index == 0:
 			# path gefunden, und wir dürfen ihn nur setzen, wenn er nicht schon gesetzt ist!
-			
+			savedpath = ""
 			try:
-				# es gibt schon einen Pfad, d.h., es ist schon der nächste Pfad
+				# es gibt schon einen Pfad, d.h., es ist schon der nächste Pfad, pylint liefert unused variable, aber hier provozieren wir einen keyerror!
+				# damit wir den allerersten Eintrag nicht verpassen
 				savedpath = self.aclentry["path"]
 				self._unreadline(self.l)
 			except KeyError:
+				# damit pylint zufrieden ist wegen savedpath
+				index = len(savedpath)
 				self.aclentry["path"] = self.l
 			
 			return TRUE
@@ -206,7 +216,7 @@ def gen_sh_commands(x):
 		return
 
 	try:
-		linuxmode = x["owner"]
+		pass
 	except KeyError:
 		print("# skipping Linux mode: %s" % (x["path"]))
 		return
@@ -237,7 +247,7 @@ def gen_sh_commands(x):
 	i = x["owner"].split('[')
 	j = i[1].split('(')
 	owner = j[0]
-	group = j[1].rstrip(')] ')
+	# group = j[1].rstrip(')] ')
 	print("synoacltool -set-owner %s user '%s'" % (singlequoted_path, owner))
 
 	# first pass, um herauszufinden, welches die echten Einträge sind
@@ -296,21 +306,31 @@ def gen_check_commands(x):
 
 def do():
 
+	if args.show_find_command:
+		print("%s" % (find_command))
+		return
+
 	reproduce = TRUE
 
 	print_header = TRUE
 
-	aclo = qacl(args.aclfile)
+	try:
+		aclo = qacl(args.inputfile)
+	except (AttributeError, TypeError) as e:
+		logging.warning("inputfile missing (use -i inputfile)")
+		return
 
 	for x in aclo:
 
 		statistics["filecount"] = statistics["filecount"] + 1
-		#print(x)
+
 		if args.gen_sh_commands:
 			if print_header:
 				print_header = FALSE
 				print("#!/bin/bash")
 				print("set -o histexpand")
+				print("# %s" % (timestamp))
+				print("# shell commands to set the ACLs via synoacl")
 
 			gen_sh_commands(x)
 			reproduce = FALSE
@@ -320,6 +340,8 @@ def do():
 				print_header = FALSE
 				print("#!/bin/bash")
 				print("set -o histexpand")
+				print("# %s" % (timestamp))
+				print("# shell commands to get all the ACLs via synoacl in order to diff them against the original ACLs, diff should show no differences")
 			gen_check_commands(x)
 			reproduce = FALSE
 
@@ -334,16 +356,21 @@ def do_args():
 		default=logging.WARNING,
 	)
 
+	parser.add_argument("-s", "--show_find_command", help="show find command to generate acl file on synology", action="store_true")
+
 	parser.add_argument(
 		'-v', '--verbose',
 		help="Be verbose",
 		action="store_const", dest="loglevel", const=logging.INFO,
 	)
 
-	parser.add_argument("aclfile", help="filename of acl file listing")
+	parser.add_argument("-i", "--inputfile", help="otional inputfile")
+	# parser.add_argument("aclfile", help="filename of acl file listing")
 	parser.add_argument("-g", "--gen_sh_commands", help="generate shell commands", action="store_true")
 	parser.add_argument("-c", "--gen_check_commands", help="generate shell commands for checking", action="store_true")
+
 	parser.parse_args(namespace=args)
+	pass
 
 
 def do_logging():
@@ -359,7 +386,8 @@ def main():
 	do()
 
 	logging.info("%d files" % statistics["filecount"])
-	logging.warning("%d errors" % statistics["errors"])
+	if statistics["errors"] != 0:
+		logging.warning("%d errors" % statistics["errors"])
 
 if __name__=='__main__':
     main()
